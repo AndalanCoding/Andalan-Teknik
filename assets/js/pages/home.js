@@ -1,188 +1,127 @@
-/* ===================== HALAMAN: BERANDA ===================== */
-function svcPanelHTML(i){
-  const s = DATA.services[i];
-  return `<div class="svc-panel-in">
-    ${figDark(s.icon,'LAYANAN',pad2(i),'',SVC_KEYS[i],s.title)}
-    <div class="svc-panel-body">
-      <h3>${esc(s.title)}</h3>
-      <p>${esc(s.desc)}</p>
-      <ul class="check-list cols2">${s.scope.slice(0,6).map(x=>'<li><i data-lucide="check"></i><span>'+esc(x)+'</span></li>').join('')}</ul>
-      <div class="svc-actions">
-        <a class="btn btn-orange btn-sm" target="_blank" rel="noopener" href="${waLink(waQuote(s.title))}">Minta Penawaran <i data-lucide="arrow-up-right"></i></a>
-        <a class="link-arrow" href="#/layanan">Lihat detail layanan <i data-lucide="arrow-right"></i></a>
-      </div>
-    </div>
-  </div>`;
-}
-function renderHome(){
-  const hasDemo = DATA.projects.some(p=>p.demo);
-  const tstiIdx = DATA.testimonials.length ? '05' : '05';
+"use strict";
+/* ---------- VIEWS ---------- */
+function vHome(){
+  const H=DB.hero, feat=DB.promos.find(p=>p.active&&p.featured)||DB.promos.find(p=>p.active);
+  const promos=DB.promos.filter(p=>p.active&&!p.featured);
+  const pkgs=DB.packages.filter(p=>p.active);
+  const ports=DB.portfolio.filter(p=>p.active);
   return `
-  <!-- HERO -->
   <section class="hero">
-    <div class="container hero-in">
+    <canvas id="fx"></canvas>
+    <div class="wrap hero-grid">
       <div>
-        <span class="hero-kicker">CV. KARYA ANDALAN TEKNIK · SEMARANG</span>
-        <h1>Solusi <em>IT, Komputer &amp; CCTV</em> Andal untuk Bisnis Anda</h1>
-        <p class="lead">Andalan Teknik melayani service dan maintenance komputer, instalasi CCTV, serta pengadaan perangkat teknologi untuk rumah, kantor, bisnis, dan instansi di Semarang dan sekitarnya.</p>
-        <div class="hero-cta">
-          <a class="btn btn-orange" target="_blank" rel="noopener" href="${waLink(WA_FLOAT_MSG)}">Konsultasi via WhatsApp</a>
-          <a class="btn btn-ghost" href="#/layanan">Lihat Layanan</a>
+        <div class="kick-row"><b></b>${esc(H.kicker)}</div>
+        <h1>${esc(H.title).replace('Cerdas','<em>Cerdas<svg viewBox="0 0 120 10" preserveAspectRatio="none"><path d="M2 7 Q60 -2 118 6" fill="none" stroke="#35e0ff" stroke-width="2.5" vector-effect="non-scaling-stroke" opacity=".85"/></svg></em>')}</h1>
+        <p class="lead">${esc(H.lead)}</p>
+        <div class="cta-row">
+          <button class="btn btn-p" data-wa="Halo Andalan Teknik, saya ingin konsultasi kebutuhan teknologi untuk bisnis/kebutuhan saya.">${ic('wa')}Konsultasi via WhatsApp</button>
+          <a class="btn btn-g" href="#/layanan">${ic('arrow')}Jelajahi Layanan</a>
         </div>
-        <div class="hero-meta">
-          <span><i data-lucide="map-pin"></i> Melayani Semarang &amp; sekitarnya</span>
-          <span><i data-lucide="shield-check"></i> Rumah tangga, kantor, sekolah, instansi &amp; bisnis</span>
-        </div>
-      </div>
-      <div class="hero-fig corners out">
-        ${CORNERS}
-        ${heroSVG()}
-        <div class="hero-chip">
-          <span class="icw"><i data-lucide="video"></i></span>
-          <span><strong>Instalasi &amp; Konfigurasi CCTV</strong><span>DVR / NVR · akses dari smartphone</span></span>
+        <div class="stats">
+          <div><b>${DB.services.filter(s=>s.active).length}</b><span>Layanan Utama</span></div>
+          <div><b>${pkgs.length}</b><span>Paket Hemat</span></div>
+          <div><b>${DB.sectors.length}</b><span>Sektor Pelanggan</span></div>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- MARQUEE -->
-  <div class="marquee" aria-hidden="true">
-    <div class="mq-track">
-      ${'<div class="mq-group">'+['SERVICE KOMPUTER','INSTALASI CCTV','PENGADAAN PERANGKAT IT','MAINTENANCE BERKALA','KONFIGURASI DVR & NVR','TROUBLESHOOTING','PENATAAN KABEL & JARINGAN','UPGRADE RAM & SSD','AKSES CCTV VIA SMARTPHONE'].map(x=>'<span>'+x+'</span>').join('')+'</div>'}
-      ${'<div class="mq-group">'+['SERVICE KOMPUTER','INSTALASI CCTV','PENGADAAN PERANGKAT IT','MAINTENANCE BERKALA','KONFIGURASI DVR & NVR','TROUBLESHOOTING','PENATAAN KABEL & JARINGAN','UPGRADE RAM & SSD','AKSES CCTV VIA SMARTPHONE'].map(x=>'<span>'+x+'</span>').join('')+'</div>'}
-    </div>
-  </div>
-
-  <!-- LAYANAN UTAMA -->
-  <section class="section">
-    <div class="container">
-      ${secHead('01 · Layanan Utama','Apa yang Bisa Kami Bantu','Empat lini layanan utama Andalan Teknik — klik untuk melihat ringkasan tiap layanan.','<a class="sec-link" href="#/layanan">Semua layanan <i data-lucide="arrow-right"></i></a>')}
-      <div class="svc-tabs">
-        <div class="svc-tab-list">
-          ${DATA.services.map((s,i)=>`
-          <button class="svc-tab" type="button" data-i="${i}">
-            <span class="svc-num">${pad2(i)}</span>
-            <span class="svc-tt"><b>${esc(s.title)}</b><small>${esc(s.short)}</small></span>
-            <i data-lucide="chevron-right"></i>
-          </button>`).join('')}
-        </div>
-        <div id="svc-panel"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- KEUNGGULAN -->
-  <section class="section on-navy">
-    <div class="container adv-grid">
-      <div class="reveal">
-        <span class="sec-index">02 · Keunggulan</span>
-        <h2 class="sec-title">Mengapa Memilih Andalan Teknik</h2>
-        <p class="sec-sub">Bukan sekadar memperbaiki perangkat — kami memastikan Anda memahami apa yang dikerjakan, mengapa dikerjakan, dan berapa biayanya sebelum pekerjaan dimulai.</p>
-        <p style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;color:#5480C4;margin-top:22px">CV. KARYA ANDALAN TEKNIK — SEMARANG</p>
-      </div>
-      <div class="spec-grid reveal">
-        ${ADVANTAGES.map(a=>`<div class="spec-cell"><i data-lucide="${a.icon}"></i><h3>${a.t}</h3><p>${a.d}</p></div>`).join('')}
-      </div>
-    </div>
-  </section>
-
-  <!-- PROSES -->
-  <section class="section">
-    <div class="container">
-      ${secHead('03 · Proses Kerja','Dari Konsultasi hingga Selesai','Alur kerja yang jelas dan disepakati bersama di setiap tahapnya.')}
-      <div class="steps">
-        ${STEPS.map((st,i)=>`
-        <div class="step reveal" style="transition-delay:${i*70}ms">
-          <span class="step-num">${pad2(i)}</span>
-          <div><h3>${st.t}</h3><p>${st.d}</p></div>
-        </div>`).join('')}
-      </div>
-    </div>
-  </section>
-
-  ${DATA.projects.length ? `
-  <!-- PORTOFOLIO -->
-  <section class="section section-soft">
-    <div class="container">
-      ${secHead('04 · Portofolio','Dokumentasi Pekerjaan','Kategori pekerjaan yang kami tangani.','<a class="sec-link" href="#/portofolio">Lihat semua <i data-lucide="arrow-right"></i></a>')}
-      ${hasDemo?'<p class="pf-note"><i data-lucide="info"></i> Menampilkan data contoh — dokumentasi proyek nyata dikelola melalui dashboard admin.</p>':''}
-      <div class="pf-grid">${DATA.projects.slice(0,6).map((p,i)=>projCard(p,i===0,i*60)).join('')}</div>
-    </div>
-  </section>` : ''}
-
-  ${DATA.testimonials.length ? `
-  <!-- TESTIMONI (hanya tampil jika sudah ditambahkan & terverifikasi admin) -->
-  <section class="section">
-    <div class="container">
-      ${secHead(tstiIdx+' · Testimoni','Kata Pelanggan Kami','Testimoni ditampilkan setelah melewati proses verifikasi oleh tim kami.')}
-      <div class="tsti-grid">
-        ${DATA.testimonials.map(t=>`
-        <div class="tsti reveal">
-          <i data-lucide="quote"></i>
-          <p>“${esc(t.text)}”</p>
-          <div class="who"><b>${esc(t.name)}</b><span>${esc(t.role||'')}</span></div>
-        </div>`).join('')}
-      </div>
-    </div>
-  </section>` : ''}
-
-  <!-- FAQ -->
-  <section class="section ${DATA.testimonials.length?'':'section-soft'}">
-    <div class="container">
-      <div class="faq-grid">
-        <div class="faq-side reveal">
-          <span class="sec-index">${DATA.testimonials.length?'06':'05'} · FAQ</span>
-          <h2 class="sec-title">Pertanyaan yang Sering Diajukan</h2>
-          <p class="sec-sub">Belum menemukan jawaban yang Anda cari? Tim kami siap membantu.</p>
-          <div class="mini-cta">
-            <b>Masih ada pertanyaan?</b>
-            <p>Chat langsung dengan kami — respons pada jam operasional.</p>
-            <a class="btn btn-wa btn-sm" target="_blank" rel="noopener" href="${waLink(WA_FLOAT_MSG)}">Chat WhatsApp</a>
+      <div class="stage">
+        <div class="frame f2">
+          <span class="tag">ANDA-1 // AI UNIT</span>
+          ${robotSVG()}
+          <div class="term">
+            <div class="t-head"><i></i><i></i><i></i><span>BOOT</span></div>
+            <div class="ln" id="term-ln"></div><span class="cur"></span>
           </div>
         </div>
-        <div class="reveal">
-          ${FAQS.map(f=>`
-          <div class="faq-item">
-            <button class="faq-q" type="button">${esc(f.q)}<i data-lucide="chevron-down"></i></button>
-            <div class="faq-a"><p>${esc(f.a)}</p></div>
-          </div>`).join('')}
-        </div>
       </div>
     </div>
   </section>
 
-  <!-- CTA -->
-  <section class="cta-band">
-    <div class="container">
-      <div class="cta-inner corners out reveal">
-        ${CORNERS}
-        <span class="sec-index">Siap Memulai?</span>
-        <h2>Butuh Estimasi Biaya untuk Kebutuhan IT Anda?</h2>
-        <p>Ceritakan kendala atau kebutuhan Anda — kami bantu susun solusi dan penawarannya. Biaya menyesuaikan kebutuhan dan disepakati sebelum pengerjaan.</p>
-        <div class="btn-row">
-          <a class="btn btn-orange" target="_blank" rel="noopener" href="${waLink(WA_FLOAT_MSG)}">Konsultasi via WhatsApp</a>
-          <a class="btn btn-ghost" href="#/kontak">Isi Formulir Konsultasi</a>
+  <section id="layanan-section">
+    <div class="wrap">
+      ${shead('// 01 — LAYANAN','Layanan Unggulan Kami','Delapan layanan inti yang saling terhubung — pilih untuk melihat detail, cakupan, dan cara memulainya.')}
+      ${svcSelectorHTML()}
+    </div>
+  </section>
+
+  <section style="background:var(--bg1);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+    <div class="wrap">
+      ${shead('// 02 — PROMO','Promo & Penawaran Berjalan','Penawaran aktif yang dikelola langsung oleh tim kami — periode dan syarat berlaku.',true)}
+      ${feat?`
+      <div class="promo-feat rv">
+        ${imgTag(feat.image,feat.title,'Promo')}
+        <div class="in">
+          <span class="red-tag">${ic('zap')} ${esc(feat.badge||'PROMO')}</span>
+          <h3>${esc(feat.title)}</h3>
+          <p>${esc(feat.desc)}</p>
+          <div class="meta"><span>${ic('clock')} ${esc(feat.period||'—')}</span>${feat.category?'<span>'+esc(feat.category)+'</span>':''}</div>
+          <button class="btn btn-r" data-wa="Halo Andalan Teknik, saya ingin bertanya tentang promo: ${esc(feat.title)}.">${ic('wa')}Klaim via WhatsApp</button>
         </div>
+      </div>`:''}
+      <div class="promo-grid">${promos.map(promoCard).join('')}</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      ${shead('// 03 — PAKET','Paket Service & Maintenance','Paket hemat untuk kebutuhan berkelanjutan — kombinasi layanan dalam satu skema kerja sama.')}
+      ${pkgs.map(pkgHTML).join('')}
+    </div>
+  </section>
+
+  <section style="background:var(--bg1);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+    <div class="wrap">
+      ${shead('// 04 — KATALOG','Pengadaan Perangkat','Perangkat komputer, laptop, CCTV, dan perlengkapan jaringan — spesifikasi disesuaikan kebutuhan, harga dikonfirmasi via penawaran.')}
+      <div class="prod-grid" style="margin-bottom:26px">
+        ${DB.products.filter(p=>p.active).slice(0,6).map(p=>`
+        <div class="prod rv" data-prod="${p.id}" role="button" tabindex="0">
+          <div class="im">${imgTag(p.image,p.name,p.category)}<span class="cat">${esc(p.category)}</span></div>
+          <div class="bd"><h4>${esc(p.name)}</h4><div class="sp">${(p.specs||[]).map(esc).join('<br>')}</div>
+          <div class="pr">${p.price?esc(p.price):'<em>— MINTA PENAWARAN —</em>'}</div></div>
+        </div>`).join('')}
+      </div>
+      <a class="btn btn-g" href="#/katalog">${ic('layers')}Buka Katalog Lengkap</a>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      ${shead('// 05 — KEUNGGULAN','Mengapa Andalan Teknik','Prinsip kerja kami — bukan sekadar memperbaiki perangkat, tapi menjaga teknologi Anda tetap menjadi aset.')}
+      <div class="adv">
+        ${[['Satu Pintu untuk Semua Urusan IT','Dari service satu unit laptop hingga pengadaan dan maintenance seluruh kantor — tidak perlu berpindah-pindah penyedia jasa.'],
+           ['Konsultasi Dulu, Belanja Belakangan','Kami memulai dari analisis kebutuhan, bukan dari daftar harga. Anda mendapat rekomendasi yang proporsional dengan masalah sebenarnya.'],
+           ['Dukungan Berkelanjutan','Pekerjaan kami tidak berhenti saat perangkat terpasang — tersedia skema maintenance dan penanganan gangguan lanjutan.'],
+           ['Transparan & Terdokumentasi','Penawaran, lingkup kerja, dan hasil pengerjaan disampaikan secara jelas — Anda tahu apa yang dibayar dan apa yang didapat.'],
+           ['Berbasis di Semarang','Kami bekerja dari Tembalang, Semarang, dan melayani sekitarnya — mudah dihubungi, mudah menemui.']]
+          .map((a,i)=>'<div class="node rv"><div class="pt"><i></i></div><div class="no">MODULE 0'+(i+1)+'</div><h3>'+esc(a[0])+'</h3><p>'+esc(a[1])+'</p></div>').join('')}
       </div>
     </div>
-  </section>`;
-}
-function mountHome(){
-  // Tab layanan interaktif
-  let act = 0;
-  const tabs = $$('.svc-tab');
-  const paint = ()=>{
-    tabs.forEach((t,i)=>t.classList.toggle('active', i===act));
-    $('#svc-panel').innerHTML = svcPanelHTML(act);
-    refreshIcons();
-  };
-  tabs.forEach((t,i)=>t.addEventListener('click', ()=>{ act=i; paint(); }));
-  paint();
-  // FAQ accordion
-  $$('.faq-q').forEach(b=>b.addEventListener('click', ()=>{
-    const item = b.parentElement, a = item.querySelector('.faq-a');
-    const open = item.classList.toggle('open');
-    a.style.maxHeight = open ? a.scrollHeight+'px' : '0px';
-  }));
+  </section>
+
+  <section style="padding-top:30px">
+    <div class="wrap center">
+      ${shead('// 06 — SEKTOR','Sektor yang Kami Layani','',true)}
+    </div>
+    <div class="mq rv"><div class="mq-track">
+      ${DB.sectors.concat(DB.sectors).map(s=>'<div class="sec-chip">'+ic(s.icon||'zap')+esc(s.label)+'</div>').join('')}
+    </div></div>
+  </section>
+
+  <section style="background:var(--bg1);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+    <div class="wrap">
+      ${shead('// 07 — PORTOFOLIO','Jejak Pengerjaan','Ringkasan pekerjaan yang telah kami tangani — daftar terus diperbarui oleh tim.')}
+      <div class="port-grid">${ports.map(portCard).join('')}</div>
+      <div style="text-align:center;margin-top:26px"><a class="btn btn-g" href="#/portofolio">Lihat Semua Portofolio</a></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      ${shead('// 08 — FAQ','Pertanyaan yang Sering Diajukan','',true)}
+      <div style="max-width:820px;margin:0 auto">${faqHTML()}</div>
+    </div>
+  </section>
+
+  ${ctaBand('Mulai dari Satu Percakapan','Ceritakan kendala atau rencana teknologi Anda — kami bantu petakan langkah paling efisien berikutnya, tanpa biaya konsultasi awal.')}
+  `;
 }
 

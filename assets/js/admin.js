@@ -1,447 +1,255 @@
-/* ===================== DASHBOARD ADMIN ===================== */
-let adminAuthed = sessionStorage.getItem('andalan_admin_auth')==='1';
-let adminTab = 'ringkasan';
-
+"use strict";
+/* ================================================================
+   DASHBOARD ADMIN
+   Login client-side hanya untuk pengelolaan lokal/kendali akses
+   ringan. Untuk produksi multi-user, gunakan integrasi Google
+   Apps Script (tab "Integrasi & Data") dengan token rahasia.
+================================================================ */
+const PW_KEY='andalan_admin_pw';
+const ADMIN_TABS=[
+ ['overview','Ringkasan','radar','INTI'],
+ ['hero','Konten Beranda','monitor','INTI'],
+ ['promos','Promo & Banner','zap','KONTEN'],
+ ['packages','Paket Hemat','box','KONTEN'],
+ ['products','Katalog Produk','layers','KONTEN'],
+ ['services','Layanan','wrench','KONTEN'],
+ ['portfolio','Portofolio','eye','KONTEN'],
+ ['sectors','Sektor Pelanggan','users','KONTEN'],
+ ['about','Halaman Tentang','building','KONTEN'],
+ ['faqs','FAQ','chat','KONTEN'],
+ ['testimonials','Testimoni','star','KONTEN'],
+ ['leads','Permintaan Konsultasi','send','INTERAKSI'],
+ ['company','Info Perusahaan','building','PENGATURAN'],
+ ['data','Integrasi & Data','db','PENGATURAN']
+];
+let adTab='overview';
+function getPW(){ return localStorage.getItem(PW_KEY)||CONFIG.defaultAdminPassword; }
 function renderAdmin(){
-  return adminAuthed ? adminShell() : adminLogin();
-}
-function adminLogin(){
-  return `
-  <div class="admin-login">
-    <div class="al-card">
-      <a class="brand" href="#/">
-        <img class="brand-mark" src="assets/img/logo.png" alt="Logo Andalan Teknik" width="46" height="42">
-        <span class="brand-txt"><b>Andalan Teknik</b><small>CV. KARYA ANDALAN TEKNIK</small></span>
-      </a>
-      <h1>Dashboard Admin</h1>
-      <p>Masuk untuk mengelola konten website — katalog, portofolio, layanan, dan pengaturan.</p>
-      <form id="login-form">
-        <div class="field">
-          <label>Kata Sandi</label>
-          <input type="password" name="pw" id="pw" required autocomplete="current-password" placeholder="Kata sandi admin">
-        </div>
-        <button class="btn btn-orange btn-block" type="submit"><i data-lucide="lock"></i> Masuk</button>
-      </form>
-      <div class="login-err" id="login-err" hidden><i data-lucide="alert-triangle"></i>Kata sandi salah. Silakan coba lagi.</div>
-      <div class="al-hint">Autentikasi ini berjalan di sisi browser (mode demo) — jangan dipakai untuk data sensitif. Kata sandi awal ada di <code>assets/js/config.js</code>.</div>
+  const root=$('#admin-root'); if(!root) return;
+  if(sessionStorage.getItem('adal_auth')!=='1'){ renderLogin(root); return; }
+  root.innerHTML=`
+  <aside class="ad-side">
+    <div class="brand"><img class="hex" src="assets/img/logo.png" alt="Logo Andalan Teknik"><span>ANDALAN ADMIN<small>CONTROL PANEL</small></span></div>
+    
+    <div style="margin-top:auto;padding:16px 20px;border-top:1px solid var(--line)">
+      <a href="#/" class="btn btn-g btn-sm" style="width:100%;justify-content:center;margin-bottom:8px">${ic('eye')}Lihat Situs</a>
+      <button class="btn btn-r btn-sm" style="width:100%;justify-content:center" id="ad-logout">${ic('lock')}Keluar</button>
     </div>
-  </div>`;
+  </aside>
+  <div class="ad-main" id="ad-main"></div>`;
+  // kelompok label: bangun ulang lebih bersih
+  root.querySelector('.ad-side').innerHTML='<div class="brand"><img class="hex" src="assets/img/logo.png" alt="Logo Andalan Teknik"><span>ANDALAN ADMIN<small>CONTROL PANEL</small></span></div>'+
+    (()=>{let out='',last='';ADMIN_TABS.forEach(t=>{if(t[3]!==last){out+='<div class="grp">'+t[3]+'</div>';last=t[3];}out+='<button class="tab'+(adTab===t[0]?' on':'')+'" data-adtab="'+t[0]+'">'+ic(t[2])+t[1]+'</button>';});return out;})()+
+    '<div style="margin-top:auto;padding:16px 20px;border-top:1px solid var(--line)">'+adPublishHTML()+'<a href="#/" class="btn btn-g btn-sm" style="width:100%;justify-content:center;margin-bottom:8px">'+ic('eye')+'Lihat Situs</a><button class="btn btn-r btn-sm" style="width:100%;justify-content:center" id="ad-logout">'+ic('lock')+'Keluar</button></div>';
+  root.querySelectorAll('[data-adtab]').forEach(b=>b.addEventListener('click',()=>{adTab=b.dataset.adtab;renderAdmin();}));
+  $('#ad-logout').addEventListener('click',()=>{sessionStorage.removeItem('adal_auth');refreshDB();renderAdmin();});
+  bindPublish();
+  renderAdTab();
 }
-function adminShell(){
-  const tabs = [
-    ['ringkasan','Ringkasan','layout-dashboard'],
-    ['pesan','Pesan Masuk','inbox'],
-    ['layanan','Kelola Layanan','wrench'],
-    ['produk','Kelola Produk','package'],
-    ['portofolio','Kelola Portofolio','image'],
-    ['testimoni','Testimoni','quote'],
-    ['pengaturan','Pengaturan','settings']
-  ];
-  return `
-  <div class="admin">
-    <aside class="admin-side">
-      <a class="brand" href="#/">
-        <img class="brand-mark" src="assets/img/logo.png" alt="Logo Andalan Teknik" width="46" height="42">
-        <span class="brand-txt"><b>Andalan Teknik</b><small>ADMIN PANEL</small></span>
-      </a>
-      ${tabs.map(t=>`<button class="anav${adminTab===t[0]?' active':''}" data-tab="${t[0]}" type="button"><i data-lucide="${t[2]}"></i>${t[1]}${t[0]==='pesan'&&DATA.messages.length?`<span class="cnt">${DATA.messages.length}</span>`:''}</button>`).join('')}
-      <div class="a-side-bottom">
-        <button class="anav" id="a-view" type="button"><i data-lucide="external-link"></i>Lihat Website</button>
-        <button class="anav" id="a-logout" type="button"><i data-lucide="log-out"></i>Keluar</button>
-      </div>
-    </aside>
-    <div class="admin-main">
-      <div class="admin-top">
-        <div><span class="sec-index">Dashboard Admin</span><h1 id="admin-title"></h1></div>
-        <div class="a-actions">
-          <a class="btn btn-outline btn-sm" href="#/">Lihat Website</a>
-          <button class="btn btn-outline btn-sm" id="a-logout2" type="button"><i data-lucide="log-out"></i> Keluar</button>
-        </div>
-      </div>
-      <div id="admin-body"></div>
-    </div>
-  </div>`;
+function renderLogin(root){
+  root.innerHTML=`<div class="ad-login"><div class="box panel">
+    <h3 style="margin-bottom:6px">${ic('lock')} Dashboard Admin</h3>
+    <p style="font-size:13px;color:var(--mut);margin-bottom:18px">Masukkan kata sandi admin untuk mengelola konten situs. Sandi awal ada di <span class="mono" style="color:var(--cyan)">assets/js/config.js</span> — segera ganti di tab Integrasi &amp; Data.</p>
+    <form id="ad-login-f"><div class="fld"><label>Kata Sandi</label><input type="password" name="pw" required autofocus></div>
+    <button class="btn btn-p" style="width:100%;justify-content:center;margin-top:14px" type="submit">Masuk</button></form>
+    <p style="margin-top:14px"><a href="#/" style="font-size:13px">← Kembali ke situs</a></p>
+  </div></div>`;
+  $('#ad-login-f').addEventListener('submit',e=>{
+    e.preventDefault();
+    if(e.target.pw.value===getPW()){ sessionStorage.setItem('adal_auth','1'); refreshDB(); toast('Selamat datang, admin.'); renderAdmin(); }
+    else toast('Kata sandi salah.','err');
+  });
 }
-function mountAdmin(){
-  if(!adminAuthed){
-    $('#login-form').addEventListener('submit', e=>{
-      e.preventDefault();
-      if($('#pw').value === DATA.settings.adminPassword){
-        adminAuthed = true;
-        sessionStorage.setItem('andalan_admin_auth','1');
-        adminTab = 'ringkasan';
-        route();
-        toast('Selamat datang kembali','success');
-      } else {
-        $('#login-err').hidden = false;
-        $('#pw').value = '';
-      }
+
+/* --- skema field untuk CRUD generik --- */
+const F={text:(k,l,ph)=>({k,t:'text',l,ph}),area:(k,l)=>({k,t:'area',l}),list:(k,l)=>({k,t:'list',l}),bool:(k,l)=>({k,t:'bool',l}),sel:(k,l,o)=>({k,t:'sel',l,o}),img:(k,l)=>({k,t:'img',l})};
+const SCHEMAS={
+ services:{title:'Layanan',nameKey:'title',fields:[F.sel('icon','Ikon',ICON_NAMES),F.text('title','Judul'),F.area('desc','Deskripsi'),F.list('features','Poin layanan (satu per baris)'),F.bool('active','Tampilkan di situs')]},
+ promos:{title:'Promo',nameKey:'title',fields:[F.text('badge','Label (mis. PROMO)'),F.text('title','Judul promo'),F.area('desc','Deskripsi'),F.text('period','Periode'),F.area('terms','Syarat & ketentuan'),F.text('category','Kategori'),F.img('image','Gambar'),F.bool('featured','Jadikan banner utama'),F.bool('active','Aktif')]},
+ packages:{title:'Paket Hemat',nameKey:'title',fields:[F.text('title','Nama paket'),F.text('audience','Sasaran'),F.list('items','Item paket (satu per baris)'),F.area('price','Keterangan harga / skema'),F.bool('featured','Tandai rekomendasi'),F.bool('active','Aktif')]},
+ products:{title:'Produk Katalog',nameKey:'name',fields:[F.text('name','Nama perangkat'),F.sel('category','Kategori',PRODUCT_CATS),F.list('specs','Spesifikasi (satu per baris)'),F.text('price','Harga (kosongkan = minta penawaran)'),F.img('image','Gambar'),F.bool('active','Tampilkan')]},
+ portfolio:{title:'Portofolio',nameKey:'title',fields:[F.text('title','Judul proyek'),F.sel('category','Kategori',PORT_CATS),F.text('location','Lokasi'),F.text('scale','Skala'),F.area('desc','Deskripsi'),F.img('image','Gambar'),F.bool('active','Tampilkan')]},
+ sectors:{title:'Sektor',nameKey:'label',fields:[F.sel('icon','Ikon',ICON_NAMES),F.text('label','Nama sektor')]},
+ faqs:{title:'FAQ',nameKey:'q',fields:[F.text('q','Pertanyaan'),F.area('a','Jawaban')]},
+ testimonials:{title:'Testimoni',nameKey:'name',fields:[F.text('name','Nama'),F.text('role','Peran / instansi'),F.area('text','Isi testimoni'),F.bool('verified','Terverifikasi'),F.bool('active','Tampilkan')]}
+};
+const HERO_FIELDS=[F.text('kicker','Eyebrow baris kecil'),F.area('title','Headline utama (kata "Cerdas" otomatis di-highlight)'),F.area('lead','Deskripsi layanan di hero')];
+const COMPANY_FIELDS=[F.text('brand','Nama brand'),F.text('legal','Nama badan usaha'),F.area('address','Alamat'),F.text('phone','Telepon'),F.text('whatsapp','Nomor WhatsApp (format 62xxx, tanpa tanda +)'),F.text('email','Email'),F.text('hours','Jam operasional'),F.text('mapsQuery','Query peta Google Maps')];
+
+function renderAdTab(){
+  const m=$('#ad-main'); if(!m) return;
+  const warns=[];
+  if(DB.company.whatsapp==='6281234567890') warns.push('Nomor WhatsApp masih menggunakan nilai default. Semua tombol WhatsApp mengarah ke nomor ini — segera perbarui di tab <b>Info Perusahaan</b>.');
+  if(!DB.company.email) warns.push('Email perusahaan belum diisi.');
+  if(!getRemote().enabled) warns.push('<b>Mode lokal:</b> perubahan hanya terlihat di browser ini. Aktifkan Google Sheets di tab <b>Integrasi &amp; Data</b> agar tampil untuk semua pengunjung.');
+  const warnHTML=warns.length?'<div class="ad-note">'+ic('zap')+'<div>'+warns.join('<br>')+'</div></div>':'';
+  const T={
+  overview:()=>{
+    const leads=DB.leads, nw=leads.filter(l=>l.status==='baru').length;
+    m.innerHTML='<div class="ad-top"><h2>Ringkasan</h2></div>'+warnHTML+
+    '<div class="stat-row">'+
+    '<div class="stat"><b>'+DB.promos.filter(p=>p.active).length+'</b><span>Promo Aktif</span></div>'+
+    '<div class="stat"><b>'+DB.products.filter(p=>p.active).length+'</b><span>Produk Katalog</span></div>'+
+    '<div class="stat"><b>'+DB.portfolio.filter(p=>p.active).length+'</b><span>Entri Portofolio</span></div>'+
+    '<div class="stat"><b>'+nw+'</b><span>Lead Baru</span></div>'+
+    '</div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Permintaan Terbaru</th><th>Kebutuhan</th><th>Status</th><th>Waktu</th></tr></thead><tbody>'+
+    (leads.length?leads.slice(0,8).map(l=>'<tr><td><b style="color:var(--txt)">'+esc(l.nama)+'</b>'+(l.org?'<br><span style="font-size:12px">'+esc(l.org)+'</span>':'')+'</td><td>'+esc(l.need)+'</td><td>'+esc(l.status)+'</td><td style="font-family:var(--f-mono);font-size:11px">'+esc(l.tanggal)+'</td></tr>').join(''):'<tr><td colspan="4" style="text-align:center;padding:24px">Belum ada permintaan masuk.</td></tr>')+
+    '</tbody></table></div>';
+  },
+  hero:()=>{
+    m.innerHTML='<div class="ad-top"><h2>Konten Beranda (Hero)</h2></div>'+warnHTML+'<div class="ad-form">'+formFromFields(HERO_FIELDS,DB.hero)+
+    '<button class="btn btn-p btn-sm" style="margin-top:16px" id="f-save">'+ic('check')+'Simpan Beranda</button></div>';
+    $('#f-save').addEventListener('click',()=>{
+      collectFields(HERO_FIELDS,DB.hero); saveDB(); toast('Konten beranda disimpan.');
     });
-    return;
-  }
-  const logout = ()=>{
-    adminAuthed = false;
-    sessionStorage.removeItem('andalan_admin_auth');
-    route();
+  },
+  company:()=>{
+    m.innerHTML='<div class="ad-top"><h2>Info Perusahaan</h2></div>'+warnHTML+'<div class="ad-form">'+formFromFields(COMPANY_FIELDS,DB.company)+
+    '<button class="btn btn-p btn-sm" style="margin-top:16px" id="f-save">'+ic('check')+'Simpan Info Perusahaan</button></div>';
+    $('#f-save').addEventListener('click',()=>{
+      collectFields(COMPANY_FIELDS,DB.company); saveDB(); buildNav(); toast('Info perusahaan disimpan.');
+    });
+  },
+  leads:()=>{
+    m.innerHTML='<div class="ad-top"><h2>Permintaan Konsultasi & Penawaran</h2><div class="sp"><button class="btn btn-g btn-sm" id="ld-refresh">'+ic('down')+'Muat dari Server</button> <button class="btn btn-g btn-sm" id="ld-csv">'+ic('down')+'Export CSV</button></div></div>'+warnHTML+
+    '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Nama</th><th>Kebutuhan / Pesan</th><th>Sumber</th><th>Waktu</th><th>Status</th><th></th></tr></thead><tbody>'+
+    (DB.leads.length?DB.leads.map(l=>'<tr><td><b style="color:var(--txt)">'+esc(l.nama)+'</b>'+(l.org?'<br><span style="font-size:12px">'+esc(l.org)+'</span>':'')+'</td><td style="max-width:280px"><b style="color:var(--txt);font-size:12.5px">'+esc(l.need)+'</b><br>'+esc(l.pesan)+'</td><td style="font-family:var(--f-mono);font-size:11px">'+esc(l.source)+'</td><td style="font-family:var(--f-mono);font-size:11px">'+esc(l.tanggal)+'</td><td><select class="mini" data-leadst="'+l.id+'">'+['baru','diproses','selesai'].map(s=>'<option'+(l.status===s?' selected':'')+'>'+s+'</option>').join('')+'</select></td><td><div class="act"><a class="ibtn" target="_blank" rel="noopener" href="'+waLink('Halo '+l.nama+', kami dari Andalan Teknik membalas permintaan Anda terkait: '+l.need)+'" title="Balas via WA">'+ic('wa')+'</a><button class="ibtn del" data-leaddel="'+l.id+'" title="Hapus">'+ic('trash')+'</button></div></td></tr>').join(''):'<tr><td colspan="6" style="text-align:center;padding:24px">Belum ada permintaan masuk.</td></tr>')+
+    '</tbody></table></div>';
+    bindLeadTools();
+    m.querySelectorAll('[data-leadst]').forEach(s=>s.addEventListener('change',()=>{
+      const l=DB.leads.find(x=>x.id===s.dataset.leadst); if(l){l.status=s.value;saveDB(true);remoteLead('status',l.id,l.status);toast('Status diperbarui: '+s.value);}
+    }));
+    m.querySelectorAll('[data-leaddel]').forEach(b=>b.addEventListener('click',()=>confirmModal('Hapus permintaan?','Data permintaan ini akan dihapus permanen.',()=>{
+      remoteLead('del',b.dataset.leaddel); DB.leads=DB.leads.filter(x=>x.id!==b.dataset.leaddel); saveDB(true); renderAdTab(); toast('Permintaan dihapus.');
+    })));
+  },
+  about:()=>{
+    const AF=[F.area('profile','Profil perusahaan (tulis {brand} untuk nama brand)'),F.list('values','Nilai kerja (satu per baris, format: Judul — penjelasan)')];
+    m.innerHTML='<div class="ad-top"><h2>Halaman Tentang</h2></div>'+warnHTML+'<div class="ad-form">'+formFromFields(AF,DB.about)+'<button class="btn btn-p btn-sm" style="margin-top:16px" id="f-save">'+ic('check')+'Simpan</button></div>';
+    $('#f-save').addEventListener('click',()=>{ collectFields(AF,DB.about); saveDB(); toast('Halaman Tentang disimpan.'); });
+  },
+  data:()=>{ /* integrasi di bawah */ }
   };
-  const lo = $('#a-logout'); if(lo) lo.onclick = logout;
-  const lo2 = $('#a-logout2'); if(lo2) lo2.onclick = logout;
-  $$('.anav[data-tab]').forEach(b=>b.addEventListener('click', ()=>{
-    adminTab = b.dataset.tab;
-    $$('.anav[data-tab]').forEach(x=>x.classList.toggle('active', x===b));
-    renderAdminTab();
+  if(T[adTab]){ T[adTab](); if(adTab!=='data') return; }
+  if(SCHEMAS[adTab]){ renderCrud(adTab); return; }
+  if(adTab==='data') renderDataTab(m,warnHTML);
+}
+function formFromFields(fields,obj){
+  return '<div class="f-grid">'+fields.map(f=>{
+    const v=obj[f.k]??''; const id='ff_'+f.k;
+    if(f.t==='img') return imgFieldHTML(id,v,f.l);
+    if(f.t==='bool') return '<div class="fld full" style="flex-direction:row;align-items:center;gap:10px"><input type="checkbox" id="'+id+'"'+(v?' checked':'')+' style="width:auto"><label for="'+id+'" style="margin:0;text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--body)">'+esc(f.l)+'</label></div>';
+    if(f.t==='area'||f.t==='list') return '<div class="fld full"><label>'+esc(f.l)+'</label><textarea id="'+id+'">'+esc(f.t==='list'?(v||[]).join('\n'):v)+'</textarea></div>';
+    if(f.t==='sel') return '<div class="fld"><label>'+esc(f.l)+'</label><select id="'+id+'">'+f.o.map(o=>'<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select></div>';
+    return '<div class="fld'+(f.k==='title'||f.k==='kicker'?' full':'')+'"><label>'+esc(f.l)+'</label><input id="'+id+'" value="'+esc(v)+'"'+(f.ph?' placeholder="'+esc(f.ph)+'"':'')+'></div>';
+  }).join('')+'</div>';
+}
+function collectFields(fields,obj){
+  fields.forEach(f=>{
+    const el=$('#ff_'+f.k); if(!el) return;
+    obj[f.k]=f.t==='bool'?el.checked:f.t==='list'?el.value.split('\n').map(x=>x.trim()).filter(Boolean):el.value.trim();
+  });
+}
+function renderCrud(key){
+  const sc=SCHEMAS[key], list=DB[key];
+  const m=$('#ad-main');
+  m.innerHTML='<div class="ad-top"><h2>'+sc.title+'</h2><div class="sp"><button class="btn btn-p btn-sm" id="c-add">'+ic('plus')+'Tambah '+sc.title+'</button></div></div>'+
+  '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>'+esc(sc.nameKey==='q'?'Pertanyaan':sc.nameKey==='name'?'Nama':'Judul')+'</th>'+(key==='promos'||key==='products'||key==='packages'?'<th>Status</th>':'')+'<th></th></tr></thead><tbody>'+
+  (list.length?list.map((it,i)=>'<tr><td style="max-width:520px"><b style="color:var(--txt)">'+esc(it[sc.nameKey])+'</b>'+(it.placeholder?' <span class="mono" style="color:var(--mut);font-size:10px">[placeholder]</span>':'')+(key==='services'||key==='products'?'<br><span style="font-family:var(--f-mono);font-size:11px;color:var(--mut)">'+ic(it.icon||'zap')+' '+esc(it.icon||'')+'</span>':'')+'</td>'+
+  ((key==='promos'||key==='products'||key==='packages')?'<td>'+(it.active?'<span style="color:var(--cyan)">aktif</span>':'<span style="color:var(--mut)">nonaktif</span>')+(it.featured?' · <span style="color:var(--red)">utama</span>':'')+'</td>':'')+
+  '<td><div class="act"><button class="ibtn" data-cmv="up" data-id="'+it.id+'" title="Naik">'+ic('up')+'</button><button class="ibtn" data-cmv="dn" data-id="'+it.id+'" title="Turun">'+ic('down')+'</button><button class="ibtn" data-ced="'+it.id+'" title="Edit">'+ic('edit')+'</button><button class="ibtn del" data-cdl="'+it.id+'" title="Hapus">'+ic('trash')+'</button></div></td></tr>').join(''):'<tr><td colspan="3" style="text-align:center;padding:24px">Belum ada data.</td></tr>')+
+  '</tbody></table></div>';
+  m.querySelectorAll('[data-cmv]').forEach(b=>b.addEventListener('click',()=>{
+    const a=DB[key], i=a.findIndex(x=>x.id===b.dataset.id), j=i+(b.dataset.cmv==='up'?-1:1);
+    if(i<0||j<0||j>=a.length) return; [a[i],a[j]]=[a[j],a[i]]; saveDB(); renderAdTab();
   }));
-  renderAdminTab();
-}
-const ADMIN_TITLES = {ringkasan:'Ringkasan',pesan:'Pesan Masuk',layanan:'Kelola Layanan',produk:'Kelola Katalog Produk',portofolio:'Kelola Portofolio',testimoni:'Kelola Testimoni',pengaturan:'Pengaturan'};
-function renderAdminTab(){
-  const t = $('#admin-title'); if(t) t.textContent = ADMIN_TITLES[adminTab];
-  const body = $('#admin-body'); if(!body) return;
-  if(adminTab==='ringkasan') body.innerHTML = tabRingkasan();
-  if(adminTab==='pesan')     body.innerHTML = tabPesan();
-  if(adminTab==='layanan')   body.innerHTML = tabLayanan();
-  if(adminTab==='produk')    body.innerHTML = tabProduk();
-  if(adminTab==='portofolio')body.innerHTML = tabPortofolio();
-  if(adminTab==='testimoni') body.innerHTML = tabTestimoni();
-  if(adminTab==='pengaturan'){ body.innerHTML = tabPengaturan(); mountPengaturan(); }
-  mountAdminTabExtras();
-  refreshIcons();
-}
-function statCard(n,l,ic){ return '<div class="a-stat"><i data-lucide="'+ic+'"></i><b>'+n+'</b><span>'+l+'</span></div>'; }
-function tabRingkasan(){
-  const recent = DATA.messages.slice(0,4);
-  return `
-  <div class="a-stats">
-    ${statCard(DATA.services.length,'Layanan','wrench')}
-    ${statCard(DATA.products.length,'Produk Katalog','package')}
-    ${statCard(DATA.projects.length,'Proyek Portofolio','image')}
-    ${statCard(DATA.messages.length,'Pesan Masuk','inbox')}
-  </div>
-  <div class="a-cols">
-    <div class="a-card">
-      <h3>Pesan Terbaru</h3>
-      ${recent.length ? recent.map(m=>`
-        <div style="padding:12px 0;border-bottom:1px solid var(--line)">
-          <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
-            <b style="font-size:14px;color:var(--navy-900)">${esc(m.nama)}</b>
-            <span class="pill">${esc(m.layanan)}</span>
-          </div>
-          <small class="muted" style="font-size:12px">${new Date(m.ts).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})} · ${esc(m.lokasi)}</small>
-        </div>`).join('') : '<p class="a-note">Belum ada pesan masuk. Pesan dari formulir konsultasi di halaman Kontak akan tampil di sini.</p>'}
-      ${recent.length?'<div style="margin-top:16px"><button class="btn btn-outline btn-sm" data-goto="pesan" type="button">Lihat semua pesan</button></div>':''}
-    </div>
-    <div class="a-card">
-      <h3>Catatan Admin</h3>
-      <ul class="note-list">
-        <li><i data-lucide="info"></i>Semua data tersimpan di localStorage browser ini. Gunakan tombol <b>Ekspor Data</b> di menu Pengaturan untuk backup berkala.</li>
-        <li><i data-lucide="info"></i>Nomor WhatsApp seluruh tombol website diatur di menu <b>Pengaturan</b> — pastikan sudah diganti dengan nomor resmi.</li>
-        <li><i data-lucide="info"></i>Data katalog &amp; portofolio bertanda <b>demo</b> adalah contoh — ganti dengan data asli sebelum website dirilis.</li>
-        <li><i data-lucide="info"></i>Testimoni hanya tampil di beranda jika ditambahkan di menu <b>Testimoni</b> dan sudah terverifikasi.</li>
-      </ul>
-      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
-        <button class="btn btn-orange btn-sm" data-goto="produk" type="button"><i data-lucide="plus"></i> Kelola Produk</button>
-        <button class="btn btn-outline btn-sm" data-goto="portofolio" type="button"><i data-lucide="plus"></i> Kelola Portofolio</button>
-      </div>
-    </div>
-  </div>`;
-}
-function tabPesan(){
-  if(!DATA.messages.length) return '<div class="a-card a-empty"><i data-lucide="inbox"></i>Belum ada pesan masuk.<br>Pesan dari formulir konsultasi akan tampil di sini.</div>';
-  return DATA.messages.map(m=>`
-  <div class="a-card">
-    <div class="msg-top">
-      <div><b>${esc(m.nama)}</b><span class="msg-date">${new Date(m.ts).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})}</span></div>
-      <div class="msg-right"><span class="pill">${esc(m.layanan)}</span>
-        <button class="icon-btn danger" data-delmsg="${m.id}" type="button" title="Hapus pesan"><i data-lucide="trash-2"></i></button>
-      </div>
-    </div>
-    <div class="msg-body">
-      <p><b>Perusahaan:</b> ${esc(m.perusahaan||'—')}</p>
-      <p><b>No. WhatsApp:</b> ${esc(m.wa)}</p>
-      <p><b>Lokasi:</b> ${esc(m.lokasi)}</p>
-      <p><b>Jadwal konsultasi:</b> ${esc(m.jadwal||'—')}</p>
-      <p class="msg-need">${esc(m.kebutuhan)}</p>
-    </div>
-  </div>`).join('');
-}
-function tabLayanan(){
-  return '<div class="a-card" style="margin-bottom:16px"><p class="a-note">Perubahan pada deskripsi, manfaat, dan cakupan pekerjaan akan langsung tampil di halaman <b>Layanan</b> dan <b>Beranda</b>.</p></div>' +
-  DATA.services.map((s,i)=>`
-  <div class="a-card svc-edit">
-    <div class="svc-edit-top"><i data-lucide="${s.icon}"></i><h3>${esc(s.title)}</h3></div>
-    <div class="field"><label>Deskripsi</label><textarea rows="3" id="se-desc-${i}">${esc(s.desc)}</textarea></div>
-    <div class="form-row">
-      <div class="field"><label>Manfaat <small class="muted">(satu per baris)</small></label><textarea rows="4" id="se-ben-${i}">${esc(s.benefits.join('\n'))}</textarea></div>
-      <div class="field"><label>Cakupan Pekerjaan <small class="muted">(satu per baris)</small></label><textarea rows="4" id="se-scp-${i}">${esc(s.scope.join('\n'))}</textarea></div>
-    </div>
-    <button class="btn btn-outline btn-sm" data-savesvc="${i}" type="button"><i data-lucide="save"></i> Simpan Layanan</button>
-  </div>`).join('');
-}
-function tabProduk(){
-  return `
-  <div class="a-toolbar">
-    <p class="a-note">Kelola katalog pengadaan — nama, kategori, harga, status ketersediaan, dan foto produk.</p>
-    <button class="btn btn-orange btn-sm" id="add-prod" type="button"><i data-lucide="plus"></i> Tambah Produk</button>
-  </div>
-  <div class="a-card a-pad0">
-    <table class="a-table">
-      <thead><tr><th>Produk</th><th>Kategori</th><th>Harga</th><th>Status</th><th></th></tr></thead>
-      <tbody>
-        ${DATA.products.length ? DATA.products.map(p=>`
-        <tr>
-          <td><b>${esc(p.name)}</b>${p.demo?'<span class="demo-pill">demo</span>':''}<br><small>${esc(p.brand||'—')}</small></td>
-          <td>${esc(p.category)}</td>
-          <td>${p.price!=null?fmtIDR(p.price):'—'}</td>
-          <td><span class="st-inline ${statusClass(p.status)}">${esc(p.status)}</span></td>
-          <td class="ta-right">
-            <button class="icon-btn" data-editprod="${p.id}" type="button" title="Edit"><i data-lucide="pencil"></i></button>
-            <button class="icon-btn danger" data-delprod="${p.id}" type="button" title="Hapus"><i data-lucide="trash-2"></i></button>
-          </td>
-        </tr>`).join('') : '<tr><td colspan="5" class="a-empty">Belum ada produk. Klik "Tambah Produk" untuk memulai.</td></tr>'}
-      </tbody>
-    </table>
-  </div>`;
-}
-function tabPortofolio(){
-  return `
-  <div class="a-toolbar">
-    <p class="a-note">Kelola dokumentasi proyek. Jangan menampilkan identitas atau foto pelanggan tanpa izin — lokasi ditulis secara umum.</p>
-    <button class="btn btn-orange btn-sm" id="add-proj" type="button"><i data-lucide="plus"></i> Tambah Proyek</button>
-  </div>
-  <div class="a-card a-pad0">
-    <table class="a-table">
-      <thead><tr><th>Proyek</th><th>Kategori</th><th>Lokasi</th><th></th></tr></thead>
-      <tbody>
-        ${DATA.projects.length ? DATA.projects.map(p=>`
-        <tr>
-          <td><b>${esc(p.title)}</b>${p.demo?'<span class="demo-pill">demo</span>':''}<br><small>${esc(p.desc)}</small></td>
-          <td>${esc(p.category)}</td>
-          <td>${esc(p.location)}</td>
-          <td class="ta-right">
-            <button class="icon-btn" data-editproj="${p.id}" type="button" title="Edit"><i data-lucide="pencil"></i></button>
-            <button class="icon-btn danger" data-delproj="${p.id}" type="button" title="Hapus"><i data-lucide="trash-2"></i></button>
-          </td>
-        </tr>`).join('') : '<tr><td colspan="4" class="a-empty">Belum ada proyek.</td></tr>'}
-      </tbody>
-    </table>
-  </div>`;
-}
-function tabTestimoni(){
-  return `
-  <div class="a-card" style="margin-bottom:16px">
-    <p class="a-note"><b>Penting:</b> testimoni hanya akan tampil di halaman Beranda jika ditambahkan di sini. Pastikan setiap testimoni berasal dari pelanggan nyata dan sudah terverifikasi sebelum ditampilkan.</p>
-    <button class="btn btn-orange btn-sm" id="add-tsti" style="margin-top:14px" type="button"><i data-lucide="plus"></i> Tambah Testimoni</button>
-  </div>
-  ${DATA.testimonials.length ? DATA.testimonials.map(t=>`
-  <div class="a-card tsti-edit">
-    <div class="msg-top">
-      <div><b>${esc(t.name)}</b><span class="msg-date">${esc(t.role||'')}</span></div>
-      <div class="msg-right">
-        <button class="icon-btn" data-edittsti="${t.id}" type="button" title="Edit"><i data-lucide="pencil"></i></button>
-        <button class="icon-btn danger" data-deltsti="${t.id}" type="button" title="Hapus"><i data-lucide="trash-2"></i></button>
-      </div>
-    </div>
-    <p style="font-size:14px;color:var(--ink-soft)">“${esc(t.text)}”</p>
-  </div>`).join('') : '<div class="a-card a-empty"><i data-lucide="quote"></i>Belum ada testimoni.<br>Bagian testimoni tidak akan tampil di beranda selama kosong.</div>'}`;
-}
-function tabPengaturan(){
-  const s = DATA.settings;
-  return `
-  <div class="a-card">
-    <h3>Informasi Kontak</h3>
-    <form id="set-form">
-      <div class="field"><label>Nomor WhatsApp <span style="color:var(--orange)">*</span></label>
-        <input name="wa" required value="${esc(s.whatsapp)}">
-        <p class="hint">Format internasional tanpa tanda "+", diawali 62. Contoh: 628123456789. Digunakan oleh seluruh tombol WhatsApp di website.</p>
-      </div>
-      <div class="form-row">
-        <div class="field"><label>Email</label><input name="email" type="email" value="${esc(s.email||'')}" placeholder="Opsional — tampil di Kontak & footer"></div>
-        <div class="field"><label>Jam Operasional <span style="color:var(--orange)">*</span></label><input name="hours" required value="${esc(s.hours)}"><p class="hint">Contoh: Senin – Sabtu, 08.00 – 17.00 WIB</p></div>
-      </div>
-      <button class="btn btn-orange btn-sm" type="submit"><i data-lucide="save"></i> Simpan Pengaturan</button>
-    </form>
-  </div>
-  <div class="a-card">
-    <h3>Keamanan</h3>
-    <form id="pw-form">
-      <div class="field" style="max-width:340px"><label>Kata Sandi Admin Baru</label><input name="pw" required minlength="6" placeholder="Minimal 6 karakter"></div>
-      <button class="btn btn-outline btn-sm" type="submit"><i data-lucide="lock"></i> Ubah Kata Sandi</button>
-    </form>
-  </div>
-  <div class="a-card">
-    <h3>Data</h3>
-    <p class="a-note" style="margin-bottom:14px">Seluruh data website tersimpan di localStorage browser ini. Ekspor secara berkala sebagai backup, atau untuk memindahkan data ke perangkat lain.</p>
-    <button class="btn btn-outline btn-sm" id="btn-export" type="button"><i data-lucide="download"></i> Ekspor Data (JSON)</button>
-  </div>`;
-}
-function fld(label, inputHtml, req, hint){
-  return '<div class="field"><label>'+label+(req?' <span class="req">*</span>':'')+'</label>'+inputHtml+(hint||'')+'</div>';
-}
-/* ---- Modal CRUD ---- */
-function productModal(p){
-  const isNew = !p;
-  p = p || {name:'',category:CATS[0],brand:'',spec:'',price:null,status:'Hubungi Admin',image:'',demo:false};
-  openModal(`
-  <h3>${isNew?'Tambah':'Edit'} Produk</h3>
-  <form id="m-form">
-    ${fld('Nama Produk','<input name="name" required value="'+esc(p.name)+'">',1)}
-    <div class="form-row">
-      ${fld('Kategori','<select name="category">'+CATS.map(c=>'<option'+(c===p.category?' selected':'')+'>'+c+'</option>').join('')+'</select>')}
-      ${fld('Status','<select name="status">'+['Tersedia','Habis','Hubungi Admin'].map(s=>'<option'+(s===p.status?' selected':'')+'>'+s+'</option>').join('')+'</select>')}
-    </div>
-    ${fld('Merek / Tipe','<input name="brand" value="'+esc(p.brand||'')+'" placeholder="Opsional">')}
-    ${fld('Spesifikasi','<textarea name="spec" rows="3">'+esc(p.spec||'')+'</textarea>')}
-    ${fld('Harga (Rp)','<input name="price" type="number" min="0" step="any" value="'+(p.price!=null?p.price:'')+'" placeholder="Kosongkan jika belum ditetapkan">')}
-    ${fld('URL Foto','<input name="image" value="'+esc(p.image||'')+'" placeholder="https://... (opsional)">','', '<p class="hint">Tempel URL foto produk. Untuk uji tampilan dapat memakai https://picsum.photos/seed/nama/800/600.jpg</p>')}
-    <div class="field"><label>Tanda Data</label>
-      <label class="check-inline"><input type="checkbox" name="demo" ${p.demo?'checked':''}> Tandai sebagai data contoh (demo) pada website</label>
-    </div>
-    <div class="m-actions"><button type="button" class="btn btn-outline btn-sm" id="m-cancel">Batal</button><button class="btn btn-orange btn-sm" type="submit">Simpan</button></div>
-  </form>`);
-  $('#m-cancel').onclick = closeModal;
-  $('#m-form').onsubmit = e=>{
-    e.preventDefault();
-    const d = Object.fromEntries(new FormData(e.target));
-    const obj = {
-      id: p.id || uid(), name: d.name.trim(), category: d.category, brand: d.brand.trim(),
-      spec: d.spec.trim(), price: d.price===''?null:Number(d.price),
-      status: d.status, image: d.image.trim(), demo: d.demo==='on'
-    };
-    if(p.id){
-      const i = DATA.products.findIndex(x=>x.id===p.id);
-      DATA.products[i] = obj;
-    } else DATA.products.unshift(obj);
-    saveData(); closeModal(); renderAdminTab();
-    toast('Produk berhasil disimpan','success');
-  };
-}
-function projectModal(p){
-  const isNew = !p;
-  p = p || {title:'',category:'CCTV',location:'',desc:'',image:'',demo:false};
-  openModal(`
-  <h3>${isNew?'Tambah':'Edit'} Proyek</h3>
-  <form id="m-form">
-    ${fld('Nama Proyek','<input name="title" required value="'+esc(p.title)+'">',1)}
-    <div class="form-row">
-      ${fld('Kategori','<select name="category">'+PF_CATS.map(c=>'<option'+(c===p.category?' selected':'')+'>'+c+'</option>').join('')+'</select>')}
-      ${fld('Lokasi Umum','<input name="location" required value="'+esc(p.location)+'" placeholder="Contoh: Tembalang, Semarang">',1)}
-    </div>
-    ${fld('Deskripsi Singkat','<textarea name="desc" rows="3" required>'+esc(p.desc)+'</textarea>',1)}
-    ${fld('URL Foto','<input name="image" value="'+esc(p.image||'')+'" placeholder="https://... (opsional)">','', '<p class="hint">Tempel URL foto dokumentasi. Untuk uji tampilan dapat memakai https://picsum.photos/seed/nama/800/600.jpg</p>')}
-    <div class="field"><label>Tanda Data</label>
-      <label class="check-inline"><input type="checkbox" name="demo" ${p.demo?'checked':''}> Tandai sebagai data contoh (demo) pada website</label>
-    </div>
-    <div class="m-actions"><button type="button" class="btn btn-outline btn-sm" id="m-cancel">Batal</button><button class="btn btn-orange btn-sm" type="submit">Simpan</button></div>
-  </form>`);
-  $('#m-cancel').onclick = closeModal;
-  $('#m-form').onsubmit = e=>{
-    e.preventDefault();
-    const d = Object.fromEntries(new FormData(e.target));
-    const obj = {id:p.id||uid(), title:d.title.trim(), category:d.category, location:d.location.trim(), desc:d.desc.trim(), image:d.image.trim(), demo:d.demo==='on'};
-    if(p.id){ const i=DATA.projects.findIndex(x=>x.id===p.id); DATA.projects[i]=obj; }
-    else DATA.projects.unshift(obj);
-    saveData(); closeModal(); renderAdminTab();
-    toast('Proyek berhasil disimpan','success');
-  };
-}
-function testiModal(t){
-  const isNew = !t;
-  t = t || {name:'',role:'',text:''};
-  openModal(`
-  <h3>${isNew?'Tambah':'Edit'} Testimoni</h3>
-  <form id="m-form">
-    ${fld('Nama Pelanggan','<input name="name" required value="'+esc(t.name)+'">',1)}
-    ${fld('Instansi / Peran','<input name="role" value="'+esc(t.role||'')+'" placeholder="Contoh: Pemilik Toko — Banyumanik">')}
-    ${fld('Isi Testimoni','<textarea name="text" rows="4" required>'+esc(t.text)+'</textarea>',1,'<p class="hint">Pastikan testimoni berasal dari pelanggan nyata dan sudah terverifikasi.</p>')}
-    <div class="m-actions"><button type="button" class="btn btn-outline btn-sm" id="m-cancel">Batal</button><button class="btn btn-orange btn-sm" type="submit">Simpan</button></div>
-  </form>`);
-  $('#m-cancel').onclick = closeModal;
-  $('#m-form').onsubmit = e=>{
-    e.preventDefault();
-    const d = Object.fromEntries(new FormData(e.target));
-    const obj = {id:t.id||uid(), name:d.name.trim(), role:d.role.trim(), text:d.text.trim()};
-    if(t.id){ const i=DATA.testimonials.findIndex(x=>x.id===t.id); DATA.testimonials[i]=obj; }
-    else DATA.testimonials.push(obj);
-    saveData(); closeModal(); renderAdminTab();
-    toast('Testimoni berhasil disimpan','success');
-  };
-}
-function mountAdminTabExtras(){
-  $$('[data-goto]').forEach(b=>b.addEventListener('click', ()=>{
-    adminTab = b.dataset.goto;
-    $$('.anav[data-tab]').forEach(x=>x.classList.toggle('active', x.dataset.tab===adminTab));
-    renderAdminTab();
-  }));
-  $$('[data-delmsg]').forEach(b=>b.addEventListener('click', ()=>confirmDialog('Hapus pesan dari '+esc(b.dataset.delmsg ? (DATA.messages.find(m=>m.id===b.dataset.delmsg)||{}).nama||'pelanggan' : '')+'?', ()=>{
-    DATA.messages = DATA.messages.filter(m=>m.id!==b.dataset.delmsg);
-    saveData(); renderAdminTab(); toast('Pesan dihapus','success');
+  $('#c-add').addEventListener('click',()=>crudForm(key,null));
+  m.querySelectorAll('[data-ced]').forEach(b=>b.addEventListener('click',()=>crudForm(key,DB[key].find(x=>x.id===b.dataset.ced))));
+  m.querySelectorAll('[data-cdl]').forEach(b=>b.addEventListener('click',()=>confirmModal('Hapus entri?','Entri ini akan dihapus dari situs.',()=>{
+    DB[key]=DB[key].filter(x=>x.id!==b.dataset.cdl); saveDB(); renderAdTab(); toast('Entri dihapus.');
   })));
-  $$('[data-savesvc]').forEach(b=>b.addEventListener('click', ()=>{
-    const i = +b.dataset.savesvc;
-    const s = DATA.services[i];
-    s.desc = $('#se-desc-'+i).value.trim();
-    s.benefits = splitLines($('#se-ben-'+i).value);
-    s.scope = splitLines($('#se-scp-'+i).value);
-    saveData(); toast('Layanan "'+s.title+'" disimpan','success');
-  }));
-  const ap = $('#add-prod'); if(ap) ap.onclick = ()=>productModal(null);
-  $$('[data-editprod]').forEach(b=>b.addEventListener('click', ()=>productModal(DATA.products.find(p=>p.id===b.dataset.editprod))));
-  $$('[data-delprod]').forEach(b=>b.addEventListener('click', ()=>{
-    const p = DATA.products.find(x=>x.id===b.dataset.delprod);
-    confirmDialog('Hapus produk "'+(p?p.name:'')+'" dari katalog?', ()=>{
-      DATA.products = DATA.products.filter(x=>x.id!==b.dataset.delprod);
-      saveData(); renderAdminTab(); toast('Produk dihapus','success');
-    });
-  }));
-  const apr = $('#add-proj'); if(apr) apr.onclick = ()=>projectModal(null);
-  $$('[data-editproj]').forEach(b=>b.addEventListener('click', ()=>projectModal(DATA.projects.find(p=>p.id===b.dataset.editproj))));
-  $$('[data-delproj]').forEach(b=>b.addEventListener('click', ()=>{
-    const p = DATA.projects.find(x=>x.id===b.dataset.delproj);
-    confirmDialog('Hapus proyek "'+(p?p.title:'')+'" dari portofolio?', ()=>{
-      DATA.projects = DATA.projects.filter(x=>x.id!==b.dataset.delproj);
-      saveData(); renderAdminTab(); toast('Proyek dihapus','success');
-    });
-  }));
-  const at = $('#add-tsti'); if(at) at.onclick = ()=>testiModal(null);
-  $$('[data-edittsti]').forEach(b=>b.addEventListener('click', ()=>testiModal(DATA.testimonials.find(t=>t.id===b.dataset.edittsti))));
-  $$('[data-deltsti]').forEach(b=>b.addEventListener('click', ()=>{
-    const t = DATA.testimonials.find(x=>x.id===b.dataset.deltsti);
-    confirmDialog('Hapus testimoni dari "'+(t?t.name:'')+'"?', ()=>{
-      DATA.testimonials = DATA.testimonials.filter(x=>x.id!==b.dataset.deltsti);
-      saveData(); renderAdminTab(); toast('Testimoni dihapus','success');
-    });
-  }));
 }
-function mountPengaturan(){
-  const sf = $('#set-form');
-  if(sf) sf.onsubmit = e=>{
-    e.preventDefault();
-    const d = Object.fromEntries(new FormData(sf));
-    if(!/^62\d{8,13}$/.test(d.wa.trim())){ toast('Nomor WhatsApp tidak valid — gunakan format 62xxxxxxxxxx','error'); return; }
-    DATA.settings.whatsapp = d.wa.trim();
-    DATA.settings.email = d.email.trim();
-    DATA.settings.hours = d.hours.trim();
-    saveData(); updateSettingsUI();
-    toast('Pengaturan berhasil disimpan','success');
-  };
-  const pf = $('#pw-form');
-  if(pf) pf.onsubmit = e=>{
-    e.preventDefault();
-    const d = Object.fromEntries(new FormData(pf));
-    DATA.settings.adminPassword = d.pw;
-    saveData();
-    pf.reset();
-    toast('Kata sandi admin berhasil diubah','success');
-  };
-  const ex = $('#btn-export');
-  if(ex) ex.onclick = ()=>{
-    const blob = new Blob([JSON.stringify(DATA,null,2)],{type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'data-andalan-teknik.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
-    toast('Data berhasil diekspor','success');
-  };
+function crudForm(key,item){
+  const sc=SCHEMAS[key]; const isNew=!item;
+  const obj=item?structuredClone(item):{id:uid(),active:true};
+  if(!item&&key==='promos'){obj.badge='PROMO';obj.period='';}
+  openModal('<h3 style="margin-bottom:18px">'+(isNew?'Tambah ':'Edit ')+sc.title+'</h3><div class="f-grid">'+
+   sc.fields.map(f=>{
+    const v=obj[f.k]??''; const id='cf_'+f.k;
+    if(f.t==='img') return imgFieldHTML(id,v,f.l);
+    if(f.t==='bool') return '<div class="fld full" style="flex-direction:row;align-items:center;gap:10px"><input type="checkbox" id="'+id+'"'+(v?' checked':'')+' style="width:auto"><label for="'+id+'" style="margin:0;text-transform:none;letter-spacing:0;font-size:13.5px;color:var(--body)">'+esc(f.l)+'</label></div>';
+    if(f.t==='area'||f.t==='list') return '<div class="fld full"><label>'+esc(f.l)+'</label><textarea id="'+id+'">'+esc(f.t==='list'?(v||[]).join('\n'):v)+'</textarea></div>';
+    if(f.t==='sel') return '<div class="fld"><label>'+esc(f.l)+'</label><select id="'+id+'">'+f.o.map(o=>'<option'+(o===v?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select></div>';
+    return '<div class="fld full"><label>'+esc(f.l)+'</label><input id="'+id+'" value="'+esc(v)+'"></div>';
+   }).join('')+'</div>'+
+   '<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px"><button class="btn btn-g btn-sm" data-close-modal>Batal</button><button class="btn btn-p btn-sm" id="cf-save">'+ic('check')+'Simpan</button></div>');
+  bindImgFields();
+  $('#cf-save').addEventListener('click',()=>{
+    const nk=sc.nameKey;
+    sc.fields.forEach(f=>{
+      const el=$('#cf_'+f.k); if(!el) return;
+      obj[f.k]=f.t==='bool'?el.checked:f.t==='list'?el.value.split('\n').map(x=>x.trim()).filter(Boolean):el.value.trim();
+    });
+    if(!obj[nk]){ toast('Field judul/nama wajib diisi.','err'); return; }
+    obj.placeholder=false;
+    if(isNew) DB[key].push(obj); else { const i=DB[key].findIndex(x=>x.id===obj.id); DB[key][i]=obj; }
+    saveDB(); closeModal(); renderAdTab(); toast(sc.title+(isNew?' ditambahkan.':' diperbarui.'));
+  });
+}
+function renderDataTab(m,warnHTML){
+  const c=getRemote();
+  m.innerHTML='<div class="ad-top"><h2>Integrasi & Data</h2></div>'+warnHTML+
+  '<div class="ad-hint">Data situs tersimpan lokal di browser (localStorage) dan otomatis dipakai oleh seluruh halaman. Untuk sinkronisasi antar-perangkat atau tim, gunakan integrasi Google Sheets via Apps Script di bawah — aman karena token rahasia disimpan pada deployment Anda, bukan di kode situs.</div>'+
+  '<div class="ad-form" style="margin-bottom:18px"><h3 style="margin-bottom:14px">'+ic('db')+' Sinkronisasi Google Sheets (opsional)</h3>'+
+  '<div class="f-grid">'+
+  '<div class="fld"><label>Status</label><select id="rm-en"><option value="0"'+(c.enabled?'':' selected')+'>Nonaktif (lokal)</option><option value="1"'+(c.enabled?' selected':'')+'>Aktif</option></select></div>'+
+  '<div class="fld full"><label>URL Web App Apps Script</label><input id="rm-url" value="'+esc(c.url)+'" placeholder="https://script.google.com/macros/s/…/exec"></div>'+
+  '<div class="fld full"><label>Token rahasia (sama dengan TOKEN di skrip)</label><input id="rm-tk" value="'+esc(c.token)+'" type="password"></div></div>'+
+  '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="btn btn-g btn-sm" id="rm-save">'+ic('gear')+'Simpan Konfigurasi</button><button class="btn btn-g btn-sm" id="rm-pull">'+ic('down')+'Tarik Data</button><button class="btn btn-p btn-sm" id="rm-push">'+ic('up')+'Kirim Data</button></div>'+
+  '<div id="rm-status" class="mono" style="margin-top:12px;font-size:12px;color:var(--mut)"></div></div>'+
+  '<div class="ad-form" style="margin-bottom:18px"><h3 style="margin-bottom:14px">'+ic('down')+' Backup Manual</h3><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-g btn-sm" id="exp">'+ic('down')+'Export JSON</button><button class="btn btn-g btn-sm" id="impbtn">'+ic('up')+'Import JSON</button><input type="file" id="imp" accept=".json" hidden><button class="btn btn-r btn-sm" id="rst">'+ic('trash')+'Reset ke Default</button></div></div>'+
+  '<div class="ad-form"><h3 style="margin-bottom:6px">'+ic('lock')+' Kata Sandi Admin</h3><div class="f-grid"><div class="fld"><label>Sandi baru</label><input id="pw1" type="password"></div><div class="fld"><label>Ulangi</label><input id="pw2" type="password"></div></div><button class="btn btn-g btn-sm" style="margin-top:14px" id="pwsave">'+ic('check')+'Ganti Sandi</button></div>'+
+  '<h3 style="margin:22px 0 10px;font-size:16px">'+ic('code')+' Panduan Google Apps Script (copy &amp; paste ke script.google.com)</h3>'+
+  '<div class="code" id="gascode">'+GAS_CODE+'</div>'+
+  '<button class="btn btn-g btn-sm" style="margin-top:10px" id="copygas">'+ic('check')+'Salin Kode</button>';
+  $('#rm-save').addEventListener('click',()=>{ setRemote({enabled:$('#rm-en').value==='1',url:$('#rm-url').value.trim(),token:$('#rm-tk').value.trim()}); toast('Konfigurasi integrasi disimpan.'); });
+  $('#rm-pull').addEventListener('click',async()=>{
+    const st=$('#rm-status'); st.textContent='Menarik data…';
+    try{ await remotePull(); st.style.color='var(--cyan)'; st.textContent='Data berhasil ditarik dari Google Sheets.'; toast('Data remote berhasil dimuat.'); }
+    catch(e){ st.style.color='var(--red)'; st.textContent='Gagal: '+e.message; }
+  });
+  $('#rm-push').addEventListener('click',async()=>{
+    const st=$('#rm-status'); st.textContent='Mengirim data…';
+    try{ await remotePush(); st.style.color='var(--cyan)'; st.textContent='Data berhasil dikirim ke Google Sheets.'; toast('Data tersimpan di Google Sheets.'); }
+    catch(e){ st.style.color='var(--red)'; st.textContent='Gagal: '+e.message; }
+  });
+  $('#exp').addEventListener('click',()=>{
+    const b=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='andalan-teknik-data.json'; a.click(); URL.revokeObjectURL(a.href);
+    toast('File backup diunduh.');
+  });
+  $('#impbtn').addEventListener('click',()=>$('#imp').click());
+  $('#imp').addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{ try{
+      const d=JSON.parse(r.result);
+      if(typeof d!=='object'||!d.services||!d.company) throw new Error('Struktur tidak dikenali');
+      DB=Object.assign(structuredClone(DEFAULT_DB),d); saveDB(); buildNav(); toast('Data berhasil diimpor.'); renderAdTab();
+    }catch(err){ toast('Import gagal: file tidak valid.','err'); } };
+    r.readAsText(f);
+  });
+  $('#rst').addEventListener('click',()=>confirmModal('Reset semua data?','Seluruh konten kembali ke placeholder default. Backup dulu via Export JSON bila perlu.',()=>{
+    DB=structuredClone(DEFAULT_DB); saveDB(); buildNav(); renderAdTab(); toast('Data direset ke default.');
+  }));
+  $('#pwsave').addEventListener('click',()=>{
+    const a=$('#pw1').value, b=$('#pw2').value;
+    if(a.length<6){ toast('Sandi minimal 6 karakter.','err'); return; }
+    if(a!==b){ toast('Konfirmasi sandi tidak sama.','err'); return; }
+    localStorage.setItem(PW_KEY,a); toast('Kata sandi admin diganti.'); $('#pw1').value='';$('#pw2').value='';
+  });
+  $('#copygas').addEventListener('click',()=>{
+    navigator.clipboard.writeText(GAS_CODE).then(()=>toast('Kode Apps Script disalin ke clipboard.')).catch(()=>toast('Gagal menyalin — silakan blok manual.','err'));
+  });
 }
 

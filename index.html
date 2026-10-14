@@ -3,87 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Andalan Teknik · Jasa IT, Komputer & CCTV Semarang</title>
-<meta name="description" content="Andalan Teknik (CV. Karya Andalan Teknik) — jasa service & maintenance komputer, instalasi CCTV, dan pengadaan perangkat IT untuk Semarang dan sekitarnya.">
-<meta name="theme-color" content="#0A1B33">
+<title>Andalan Teknik — Solusi Teknologi Cerdas untuk Masa Depan Bisnis Anda | Semarang</title>
+<meta name="description" content="CV. Karya Andalan Teknik — service & maintenance komputer, instalasi & pengadaan CCTV, jaringan IT, dan konsultasi teknologi untuk bisnis di Semarang dan sekitarnya.">
+<meta property="og:title" content="Andalan Teknik — Solusi Teknologi Cerdas untuk Masa Depan Bisnis Anda">
+<meta property="og:description" content="Service, maintenance, instalasi & pengadaan perangkat teknologi. Robot AI sebagai simbol layanan cerdas kami.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Andalan Teknik · Jasa IT, Komputer & CCTV Semarang">
-<meta property="og:description" content="Service komputer, instalasi CCTV, dan pengadaan perangkat IT di Semarang dan sekitarnya.">
-<meta property="og:image" content="assets/img/og-image.png"><!-- setelah punya domain, ganti menjadi URL lengkap https://domain-anda/assets/img/og-image.png -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/img/favicon-192.png">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#050914">
+<meta property="og:image" content="assets/img/og-image.png"><!-- setelah punya domain, ganti dengan URL lengkap -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"LocalBusiness","name":"CV. Karya Andalan Teknik","alternateName":"Andalan Teknik","description":"Jasa service, maintenance, instalasi dan pengadaan perangkat teknologi: komputer, laptop, CCTV, dan jaringan IT.","address":{"@type":"PostalAddress","streetAddress":"Jl. Griya Klipang Permai Blk. N No.6/17, Sendangmulyo, Kec. Tembalang","addressLocality":"Kota Semarang","addressRegion":"Jawa Tengah","postalCode":"50272","addressCountry":"ID"}}
+</script>
 <link rel="stylesheet" href="assets/css/base.css">
-<link rel="stylesheet" href="assets/css/layout.css">
 <link rel="stylesheet" href="assets/css/home.css">
 <link rel="stylesheet" href="assets/css/pages.css">
+<link rel="stylesheet" href="assets/css/layout.css">
 <link rel="stylesheet" href="assets/css/admin.css">
-<link rel="stylesheet" href="assets/css/responsive.css">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"LocalBusiness","name":"Andalan Teknik","legalName":"CV. Karya Andalan Teknik","description":"Jasa service komputer, instalasi CCTV, dan pengadaan perangkat IT.","address":{"@type":"PostalAddress","streetAddress":"Jl. Griya Klipang Permai Blk. N No.6/17, Sendangmulyo, Kec. Tembalang","addressLocality":"Semarang","addressRegion":"Jawa Tengah","postalCode":"50272","addressCountry":"ID"},"areaServed":"Semarang"}</script>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 <body>
-<!-- Toast & Modal root -->
-<div id="toast-wrap" aria-live="polite"></div>
-<div id="modal-root"></div>
 
-<!-- ================= HEADER ================= -->
-<header id="site-header">
-  <div class="topbar">
-    <div class="topbar-in">
-      <span class="tb-item"><i data-lucide="building-2"></i> CV. KARYA ANDALAN TEKNIK</span>
-      <span class="tb-item tb-hide-m"><i data-lucide="map-pin"></i> SEMARANG &amp; SEKITARNYA</span>
-      <span class="tb-item"><i data-lucide="clock"></i> <span id="tb-hours"></span></span>
-    </div>
-  </div>
-  <div class="navbar" id="navbar">
-    <div class="container nav-in">
-      <a class="brand" href="#/" aria-label="Andalan Teknik — Beranda">
-        <img class="brand-mark" src="assets/img/logo.png" alt="Logo Andalan Teknik" width="46" height="42">
-        <span class="brand-txt"><b>Andalan Teknik</b><small>CV. KARYA ANDALAN TEKNIK</small></span>
-      </a>
-      <nav id="nav">
-        <a href="#/" data-route="home">Beranda</a>
-        <a href="#/layanan" data-route="layanan">Layanan</a>
-        <a href="#/pengadaan" data-route="pengadaan">Pengadaan</a>
-        <a href="#/portofolio" data-route="portofolio">Portofolio</a>
-        <a href="#/tentang" data-route="tentang">Tentang Kami</a>
-        <a href="#/kontak" data-route="kontak">Kontak</a>
-        <a class="btn btn-orange btn-sm m-only" href="#/kontak">Hubungi Kami</a>
-      </nav>
-      <div class="nav-cta"><a class="btn btn-orange btn-sm" href="#/kontak">Hubungi Kami</a></div>
-      <button class="burger" id="burger" aria-label="Buka menu"><i data-lucide="menu"></i></button>
-    </div>
+<!-- PRELOADER -->
+<div id="boot" aria-hidden="true">
+  <img class="hex" src="assets/img/logo.png" alt="Logo Andalan Teknik">
+  <p>Andalan Teknik</p>
+  <div class="bar"><i></i></div>
+</div>
+
+<!-- NAV -->
+<header id="topnav">
+  <div class="nav-in">
+    <a href="#/" class="brand">
+      <img class="hex" src="assets/img/logo.png" alt="Logo Andalan Teknik">
+      <span>ANDALAN TEKNIK<small>SMART TECHNOLOGY</small></span>
+    </a>
+    <nav class="main" id="mainnav"></nav>
+    <a class="btn btn-p btn-sm nav-cta" id="navwa" target="_blank" rel="noopener" href="#">Konsultasi</a>
+    <button id="burger" aria-label="Menu"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </div>
 </header>
+<div id="mobilemenu"></div>
 
 <main id="app"></main>
 
-<!-- ================= FOOTER (dirender via JS) ================= -->
-<footer id="site-footer"></footer>
+<!-- WA FLOAT -->
+<a id="wafab" href="#" target="_blank" rel="noopener" aria-label="Chat WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.08L2 22l4.94-1.35A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.13 14.87l-.3-.17-2.94.8.8-2.9-.18-.3A8 8 0 0 1 12 4zm-3.1 3.9c-.2 0-.5.07-.76.36-.27.29-1.04 1.02-1.04 2.5 0 1.47 1.07 2.9 1.22 3.1.15.2 2.1 3.2 5.08 4.37 2.5.98 2.98.79 3.52.74.54-.05 1.73-.7 1.98-1.4.24-.68.24-1.27.17-1.4-.07-.12-.27-.2-.57-.34-.3-.15-1.73-.85-2-.95-.27-.1-.47-.15-.67.15-.2.3-.76.94-.93 1.14-.17.2-.34.22-.64.07-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.78-1.67-2.08-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.6-.92-2.2-.24-.58-.48-.5-.67-.5l-.57-.01z"/></svg></a>
 
-<!-- Tombol WhatsApp mengambang -->
-<a id="wa-float" class="wa-float" target="_blank" rel="noopener" aria-label="Konsultasi via WhatsApp">
-  <svg viewBox="0 0 24 24" width="27" height="27" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-  <span class="wa-float-tip">Konsultasi via WhatsApp</span>
-</a>
+<div id="toasts" aria-live="polite"></div>
+<div id="modal-root"><div class="bg" data-close-modal></div><div class="modal" id="modal-box"></div></div>
 
 <script src="assets/js/config.js" defer></script>
+<script src="assets/js/icons.js" defer></script>
 <script src="assets/js/data.js" defer></script>
+<script src="assets/js/store.js" defer></script>
+<script src="assets/js/remote.js" defer></script>
+<script src="assets/js/media.js" defer></script>
 <script src="assets/js/utils.js" defer></script>
-<script src="assets/js/backend.js" defer></script>
-<script src="assets/js/ui.js" defer></script>
-<script src="assets/js/content.js" defer></script>
+<script src="assets/js/nav.js" defer></script>
+<script src="assets/js/robot.js" defer></script>
 <script src="assets/js/components.js" defer></script>
 <script src="assets/js/pages/home.js" defer></script>
 <script src="assets/js/pages/layanan.js" defer></script>
-<script src="assets/js/pages/pengadaan.js" defer></script>
+<script src="assets/js/pages/katalog.js" defer></script>
+<script src="assets/js/pages/promo.js" defer></script>
+<script src="assets/js/pages/solusi.js" defer></script>
 <script src="assets/js/pages/portofolio.js" defer></script>
 <script src="assets/js/pages/tentang.js" defer></script>
 <script src="assets/js/pages/kontak.js" defer></script>
+<script src="assets/js/gas-code.js" defer></script>
+<script src="assets/js/admin-extra.js" defer></script>
 <script src="assets/js/admin.js" defer></script>
 <script src="assets/js/router.js" defer></script>
 <script src="assets/js/main.js" defer></script>

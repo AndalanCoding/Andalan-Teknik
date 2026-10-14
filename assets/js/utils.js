@@ -1,34 +1,34 @@
-/* ===================== UTIL ===================== */
-const $  = s => document.querySelector(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
-const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const uid = () => 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-const fmtIDR = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n);
-const splitLines = s => s.split('\n').map(x=>x.trim()).filter(Boolean);
-const pad2 = n => String(n+1).padStart(2,'0');
-function refreshIcons(){ try{ if(window.lucide) lucide.createIcons(); }catch(e){} }
-
-function loadData(){
-  try{
-    const raw = localStorage.getItem(LS_KEY);
-    if(raw){
-      const d = JSON.parse(raw);
-      return Object.assign({}, structuredClone(DEFAULT_DATA), d, {
-        settings: Object.assign({}, DEFAULT_DATA.settings, d.settings||{})
-      });
-    }
-  }catch(e){}
-  return structuredClone(DEFAULT_DATA);
+"use strict";
+/* ---------- UTILS ---------- */
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const uid=()=> 'id'+Math.random().toString(36).slice(2,9);
+const $=s=>document.querySelector(s);
+const $$=s=>Array.from(document.querySelectorAll(s));
+function waLink(txt){ return 'https://wa.me/'+DB.company.whatsapp+'?text='+encodeURIComponent(txt); }
+function openWA(txt){ window.open(waLink(txt),'_blank','noopener'); }
+function toast(msg,type){
+  const t=document.createElement('div'); t.className='toast'+(type==='err'?' err':'');
+  t.innerHTML=ic(type==='err'?'x':'check')+'<div>'+esc(msg)+'</div>';
+  $('#toasts').appendChild(t); setTimeout(()=>{t.style.transition='opacity .4s';t.style.opacity='0';setTimeout(()=>t.remove(),400)},3800);
 }
-let DATA = loadData();
-function saveData(){ if(USE_SHEETS) return; try{ localStorage.setItem(LS_KEY, JSON.stringify(DATA)); }catch(e){} }
-
-/* ===================== WHATSAPP ===================== */
-function waLink(msg){ return 'https://wa.me/08980222087' + DATA.settings.whatsapp + '?text=' + encodeURIComponent(msg); }
-function waQuote(serviceTitle){
-  return 'Halo Andalan Teknik, saya ingin meminta penawaran untuk layanan "' + serviceTitle + '".\n\nMohon informasi mengenai cakupan pekerjaan dan estimasi biayanya. Terima kasih.';
+function openModal(html){ $('#modal-box').innerHTML='<button class="m-close" data-close-modal>'+ic('x')+'</button><div class="m-body">'+html+'</div>'; $('#modal-root').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeModal(){ $('#modal-root').classList.remove('open'); document.body.style.overflow=''; }
+function confirmModal(title,msg,onYes){
+  openModal('<h3 style="margin-bottom:10px">'+esc(title)+'</h3><p style="color:var(--mut);font-size:14.5px;margin-bottom:22px">'+esc(msg)+'</p><div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn btn-g btn-sm" data-close-modal>Batal</button><button class="btn btn-r btn-sm" id="cf-yes">Ya, lanjutkan</button></div>');
+  $('#cf-yes').onclick=()=>{ closeModal(); onYes(); };
 }
-function waProduct(p){
-  return 'Halo Andalan Teknik, saya ingin menanyakan produk berikut:\n\nNama Produk: ' + p.name + '\nKategori: ' + p.category + '\n\nApakah produk ini tersedia? Mohon informasi harga dan spesifikasinya. Terima kasih.';
+let pageTimers=[];
+const later=(f,ms)=>{const t=setTimeout(f,ms);pageTimers.push(t);return t;};
+const every=(f,ms)=>{const t=setInterval(f,ms);pageTimers.push(t);return t;};
+
+/* ---------- REVEAL ---------- */
+const revealObs=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); revealObs.unobserve(e.target);} });
+},{threshold:.12,rootMargin:'0px 0px -30px 0px'});
+function bindReveals(root){
+  (root||document).querySelectorAll('.rv:not(.in)').forEach((el,i)=>{
+    el.style.transitionDelay=(Math.min(i,8)*55)+'ms';
+    revealObs.observe(el);
+  });
 }
 
