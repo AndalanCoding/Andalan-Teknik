@@ -10,8 +10,9 @@ const CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/AKfycbwkFbrpgHJi5zt_XK2652i6CmRn8hXASGG13hB0dP0clBumjoYZ-6S0mFKj_l9gymk2/exec',
 
   // GANTI dengan nomor WhatsApp asli — format 62xxxxxxxxxx tanpa tanda "+".
-  whatsapp: '082221037833',
+  whatsapp: '+6282221037833',
 
   // Sandi awal dashboard admin (#/admin). Segera ganti dari tab "Integrasi & Data".
   defaultAdminPassword: '@admin123'
 };
+
